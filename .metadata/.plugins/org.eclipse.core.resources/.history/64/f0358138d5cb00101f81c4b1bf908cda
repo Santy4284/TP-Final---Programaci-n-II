@@ -1,0 +1,327 @@
+package entidades;
+
+import java.time.LocalDate;
+import java.util.*;
+
+public class HomeSolution implements IHomeSolution {
+
+    private Map<Integer, Proyecto> proyectos;
+    private Map<Integer, Empleado> empleados;
+
+    public HomeSolution() {
+        this.proyectos = new HashMap<>();
+        this.empleados = new HashMap<>();
+    }
+
+    //EMPLEADOS 
+
+    @Override
+    public void registrarEmpleado(String nombre, double valor) {
+        if (nombre == null || nombre.isEmpty() || valor <= 0) {
+            throw new IllegalArgumentException("Empleado inválido");
+        }
+        int legajo = empleados.size() + 1;
+        Empleado nuevo = new EmpleadoContratado(nombre, legajo, valor);
+        empleados.put(legajo, nuevo);
+    }
+
+    @Override
+    public void registrarEmpleado(String nombre, double valor, String categoria) {
+        if (nombre == null || nombre.isEmpty() || valor <50000) {
+            throw new IllegalArgumentException("Empleado permanente inválido"); 
+        }
+        int legajo = empleados.size() + 1;
+        Empleado nuevo = new EmpleadoPermanente(nombre, legajo, valor, categoria);
+        empleados.put(legajo, nuevo);
+    }
+
+    //PROYECTOS 
+
+    @Override
+    public void registrarProyecto(String[] titulos, String[] descripcion, double[] dias,
+                                  String domicilio, String[] cliente, String inicio, String fin) {
+        if (cliente == null || cliente.length < 3) {
+            throw new IllegalArgumentException("Datos de cliente inválidos"); 
+        }
+
+        LocalDate fInicio = LocalDate.parse(inicio);
+        LocalDate fFin = LocalDate.parse(fin);
+        if (fFin.isBefore(fInicio)) {
+            throw new IllegalArgumentException("Fechas inconsistentes");
+        }
+
+        int nro = proyectos.size() + 1;
+        Proyecto nuevo = new Proyecto(nro, cliente[0], domicilio, cliente[2], cliente[1],
+                new Fecha(fInicio.getDayOfMonth(), fInicio.getMonthValue(), fInicio.getYear()),
+                new Fecha(fFin.getDayOfMonth(), fFin.getMonthValue(), fFin.getYear()));
+
+        for (int i = 0; i < titulos.length; i++) {
+            nuevo.agregarTarea(titulos[i], descripcion[i], dias[i]);
+        }
+
+        proyectos.put(nro, nuevo);
+    }
+
+    //TAREAS 
+
+    @Override
+    public void asignarResponsableEnTarea(Integer numero, String titulo) throws Exception {
+        Proyecto p = obtenerProyecto(numero);
+        if (p.estaFinalizado()) {
+            throw new Exception("Proyecto finalizado");
+        }
+
+        for (Empleado e : empleados.values()) {
+            if (!e.estaOcupado()) {
+                p.reasignarEmpleado(titulo, e);
+                return;
+            }
+        }
+        throw new Exception("Sin empleados libres");
+    }
+
+    @Override
+    public void asignarResponsableMenosRetraso(Integer numero, String titulo) throws Exception {
+        Proyecto p = obtenerProyecto(numero);
+        if (p.estaFinalizado()) {
+            throw new Exception("Proyecto finalizado");
+        }
+
+        Empleado mejor = null;
+        for (Empleado e : empleados.values()) {
+            if (!e.estaOcupado()) {
+                if (mejor == null || e.obtenerCantRetrasos() < mejor.obtenerCantRetrasos()) {
+                    mejor = e;
+                }
+            }
+        }
+        if (mejor == null) {
+        	throw new Exception("No hay empleados disponibles");
+        }
+        p.reasignarEmpleado(titulo, mejor);
+    }
+
+    @Override
+    public void registrarRetrasoEnTarea(Integer numero, String titulo, double cantidadDias) {
+        obtenerProyecto(numero).registrarRetraso(titulo, cantidadDias);
+    }
+
+    @Override
+    public void agregarTareaEnProyecto(Integer numero, String titulo, String descripcion, double dias) {
+        obtenerProyecto(numero).agregarTarea(titulo, descripcion, dias);
+    }
+
+    @Override
+    public void finalizarTarea(Integer numero, String titulo) {
+        obtenerProyecto(numero).finalizarTarea(titulo);
+    }
+
+    @Override
+    public void finalizarProyecto(Integer numero, String fin) throws IllegalArgumentException {
+        Proyecto p = obtenerProyecto(numero);
+        if (p.estaFinalizado()) {
+            throw new IllegalArgumentException("Ya finalizado");
+        }
+
+        LocalDate fechaFin = LocalDate.parse(fin);
+        if (fechaFin.isBefore(p.obtenerFechaInicio().getLocalDate()) 
+        		&& fechaFin.isBefore(p.obtenerFechaInicio().getLocalDate())   ) {
+            throw new IllegalArgumentException("Fecha inválida");
+        }            
+
+        for (Tarea t : p.obtenerTareas().values()) {
+            Empleado e = t.obtenerEmpleado();
+            if (e != null) {
+            	e.cambiarOcupado(false);
+            }
+        }
+
+        p.cambiarFinalizado();
+    }
+
+    //REASIGNACIÓN
+
+    @Override
+    public void reasignarEmpleadoEnProyecto(Integer numero, Integer legajo, String titulo) {
+        Proyecto p = obtenerProyecto(numero);
+        p.reasignarEmpleado(titulo, obtenerEmpleado(legajo));
+    }
+
+    @Override
+    public void reasignarEmpleadoConMenosRetraso(Integer numero, String titulo) throws Exception {
+        asignarResponsableMenosRetraso(numero, titulo);
+    }
+
+    //CONSULTAS 
+
+    @Override
+    public double costoProyecto(Integer numero) {
+        return obtenerProyecto(numero).calcularCostoTotal();
+    }
+
+    @Override
+    public List<Tupla<Integer, String>> proyectosFinalizados() {
+        List<Tupla<Integer, String>> lista = new ArrayList<>();
+        for (Proyecto p : proyectos.values())
+            if (p.estaFinalizado()) {
+                lista.add(new Tupla<>(p.obtenerNroProyecto(), p.obtenerDireccion()));
+            }
+        return lista;
+    }
+
+    @Override
+    public List<Tupla<Integer, String>> proyectosPendientes() {
+        List<Tupla<Integer, String>> lista = new ArrayList<>();
+        for (Proyecto p : proyectos.values())
+            if (!p.estaFinalizado() && p.obtenerTareas().size() > 0) {
+                lista.add(new Tupla<>(p.obtenerNroProyecto(), p.obtenerDireccion()));
+            }
+        return lista;
+    }
+
+    @Override
+    public List<Tupla<Integer, String>> proyectosActivos() {
+        List<Tupla<Integer, String>> lista = new ArrayList<>();
+        for (Proyecto p : proyectos.values())
+            if (!p.estaFinalizado() && !p.obtenerTareas().isEmpty()) {
+                lista.add(new Tupla<>(p.obtenerNroProyecto(), p.obtenerDireccion()));
+            }
+        return lista;
+    }
+
+    @Override
+    public Object[] empleadosNoAsignados() {
+        List<Integer> libres = new ArrayList<>();
+        for (Empleado e : empleados.values())
+            if (!e.estaOcupado()) {
+            	libres.add(e.obtenerLegajo());
+            }
+        return libres.toArray();
+    }
+
+    @Override
+    public boolean estaFinalizado(Integer numero) {
+        return obtenerProyecto(numero).estaFinalizado();
+    }
+
+    @Override
+    public int consultarCantidadRetrasosEmpleado(Integer legajo) {
+        return obtenerEmpleado(legajo).obtenerCantRetrasos();
+    }
+
+    @Override
+    public List<Tupla<Integer, String>> empleadosAsignadosAProyecto(Integer numero) {
+        Proyecto p = obtenerProyecto(numero);
+        List<Tupla<Integer, String>> lista = new ArrayList<>();
+        for (Empleado e : p.devolverHistorial())
+            lista.add(new Tupla<>(e.obtenerLegajo(), e.obtenerNombre()));
+        return lista;
+    }
+
+    //NUEVOS REQUERIMIENTOS 
+
+    @Override
+    public Object[] tareasProyectoNoAsignadas(Integer numero) {
+        Proyecto p = obtenerProyecto(numero);
+        if (p.estaFinalizado()) {
+            throw new IllegalArgumentException("Proyecto finalizado");
+        }
+        List<String> sinAsignar = new ArrayList<>();
+        for (Tarea t : p.obtenerTareas().values())
+            if (t.obtenerEmpleado() == null) {
+                sinAsignar.add(t.obtenerTitulo());
+            }
+        return sinAsignar.toArray();
+    }
+
+    @Override
+    public Object[] tareasDeUnProyecto(Integer numero) {
+        Proyecto p = obtenerProyecto(numero);
+        List<String> todas = new ArrayList<>();
+        for (Tarea t : p.obtenerTareas().values())
+            todas.add(t.obtenerTitulo());
+        return todas.toArray();
+    }
+
+    @Override
+    public String consultarDomicilioProyecto(Integer numero) {
+        return obtenerProyecto(numero).obtenerDireccion();
+    }
+
+    @Override
+    public boolean tieneRestrasos(Integer legajo) {
+        return obtenerEmpleado(legajo).tuvoRetraso();
+    }
+
+    @Override
+    public List<Tupla<Integer, String>> empleados() {
+        List<Tupla<Integer, String>> lista = new ArrayList<>();
+        for (Empleado e : empleados.values())
+            lista.add(new Tupla<>(e.obtenerLegajo(), e.obtenerNombre()));
+        return lista;
+    }
+
+    @Override
+    public String consultarProyecto(Integer numero) {
+        return obtenerProyecto(numero).toString();
+    }
+
+    //AUXILIARES 
+
+    private Proyecto obtenerProyecto(Integer numero) {
+        Proyecto p = proyectos.get(numero);
+        if (p == null) {
+        	throw new IllegalArgumentException("Proyecto no encontrado");
+        }
+        return p;
+    }
+
+    private Empleado obtenerEmpleado(Integer legajo) {
+        Empleado e = empleados.get(legajo);
+        if (e == null) {
+        	throw new IllegalArgumentException("Empleado no encontrado");
+        }
+        return e;
+    }
+    
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("HomeSolution\n\n");
+
+        if (proyectos.isEmpty()) {
+            sb.append("No hay proyectos registrados.\n");
+        } else {
+            sb.append("Listado de Proyectos:\n");
+            for (Proyecto p : proyectos.values()) {
+                sb.append("Proyecto N°: ").append(p.obtenerNroProyecto()).append("\n");
+                sb.append("Cliente: ").append(p.obtenerCliente()).append("\n");
+                sb.append("Domicilio: ").append(p.obtenerDireccion()).append("\n");
+                sb.append("Fecha finalización real: ").append(p.obtenerFechaReal()).append("\n");
+                sb.append("Costo final: $").append(p.calcularCostoTotal()).append("\n");
+
+                // Verificar si tuvo retraso
+                if (p.obtenerFechaReal().esMayor(p.obtenerFechaEstimada())) {
+                    sb.append("Retrasos: Proyecto con retraso\n");
+                } else {
+                    sb.append("Retrasos: Proyecto sin retrasos\n");
+                }
+
+                // Mostrar tareas realizadas (si existen)
+                if (p.obtenerTareas() != null && !p.obtenerTareas().isEmpty()) {
+                    sb.append("Tareas realizadas:\n");
+                    for (String t : p.obtenerTareas().keySet()) {
+                        sb.append(" - ").append(t).append("\n");
+                    }
+                } else {
+                    sb.append("No hay tareas registradas.\n");
+                }
+            }
+        }
+
+        return sb.toString();
+    }
+
+
+}
+
