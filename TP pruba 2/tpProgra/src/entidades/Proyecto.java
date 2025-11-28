@@ -52,8 +52,8 @@ public class Proyecto {
 
         Tarea nueva = new Tarea(titulo, descripcion, diasEstimados);
         tareas.put(titulo, nueva);
-        fechaEstimada.modificarDias((int) diasEstimados);
-        fechaReal = new Fecha(fechaEstimada.getLocalDate());
+//        fechaEstimada.modificarDias((int) diasEstimados);
+//        fechaReal = new Fecha(fechaEstimada.getLocalDate());
     }
 
     public void reasignarEmpleado(String tituloTarea, Empleado nuevo) {

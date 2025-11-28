@@ -14,6 +14,8 @@ public class Main {
         homeSolution.registrarEmpleado("Juan",15000);
         homeSolution.registrarEmpleado("Luis",80000, "EXPERTO");
         homeSolution.registrarEmpleado("Julieta",15000);
+        homeSolution.registrarEmpleado("Santiago", 5000);
+        homeSolution.registrarProyecto(titulos, descripciones, duracion, "Av.Balbin 4864", cliente, "2025-11-10", "2025-11-15");
         PanelManager panelManager=new PanelManager(homeSolution);
         }
     }

@@ -51,9 +51,7 @@ public class HomeSolution implements IHomeSolution {
         }
 
         int nro = proyectos.size() + 1;
-        Proyecto nuevo = new Proyecto(nro, cliente[0], domicilio, cliente[2], cliente[1],
-                new Fecha(fInicio.getDayOfMonth(), fInicio.getMonthValue(), fInicio.getYear()),
-                new Fecha(fFin.getDayOfMonth(), fFin.getMonthValue(), fFin.getYear()));
+        Proyecto nuevo = new Proyecto(nro, cliente[0], domicilio, cliente[2], cliente[1], new Fecha(fInicio), new Fecha(fFin));
 
         for (int i = 0; i < titulos.length; i++) {
             nuevo.agregarTarea(titulos[i], descripcion[i], dias[i]);
@@ -66,7 +64,7 @@ public class HomeSolution implements IHomeSolution {
 
     @Override
     public void asignarResponsableEnTarea(Integer numero, String titulo) throws Exception {
-        Proyecto p = getProyecto(numero);
+        Proyecto p = obtenerProyecto(numero);
         if (p.estaFinalizado()) {
             throw new Exception("Proyecto finalizado");
         }
@@ -82,7 +80,7 @@ public class HomeSolution implements IHomeSolution {
 
     @Override
     public void asignarResponsableMenosRetraso(Integer numero, String titulo) throws Exception {
-        Proyecto p = getProyecto(numero);
+        Proyecto p = obtenerProyecto(numero);
         if (p.estaFinalizado()) {
             throw new Exception("Proyecto finalizado");
         }
@@ -103,28 +101,29 @@ public class HomeSolution implements IHomeSolution {
 
     @Override
     public void registrarRetrasoEnTarea(Integer numero, String titulo, double cantidadDias) {
-        getProyecto(numero).registrarRetraso(titulo, cantidadDias);
+        obtenerProyecto(numero).registrarRetraso(titulo, cantidadDias);
     }
 
     @Override
     public void agregarTareaEnProyecto(Integer numero, String titulo, String descripcion, double dias) {
-        getProyecto(numero).agregarTarea(titulo, descripcion, dias);
+        obtenerProyecto(numero).agregarTarea(titulo, descripcion, dias);
     }
 
     @Override
     public void finalizarTarea(Integer numero, String titulo) {
-        getProyecto(numero).finalizarTarea(titulo);
+        obtenerProyecto(numero).finalizarTarea(titulo);
     }
 
     @Override
     public void finalizarProyecto(Integer numero, String fin) throws IllegalArgumentException {
-        Proyecto p = getProyecto(numero);
+        Proyecto p = obtenerProyecto(numero);
         if (p.estaFinalizado()) {
             throw new IllegalArgumentException("Ya finalizado");
         }
 
         LocalDate fechaFin = LocalDate.parse(fin);
-        if (fechaFin.isBefore(p.obtenerFechaInicio().getLocalDate())) {
+        if (fechaFin.isBefore(p.obtenerFechaEstimada().getLocalDate()) ) {
+//        		|| !fechaFin.isAfter(p.obtenerFechaEstimada().getLocalDate())   ) {
             throw new IllegalArgumentException("Fecha inválida");
         }            
 
@@ -142,7 +141,7 @@ public class HomeSolution implements IHomeSolution {
 
     @Override
     public void reasignarEmpleadoEnProyecto(Integer numero, Integer legajo, String titulo) {
-        Proyecto p = getProyecto(numero);
+        Proyecto p = obtenerProyecto(numero);
         p.reasignarEmpleado(titulo, obtenerEmpleado(legajo));
     }
 
@@ -155,7 +154,7 @@ public class HomeSolution implements IHomeSolution {
 
     @Override
     public double costoProyecto(Integer numero) {
-        return getProyecto(numero).calcularCostoTotal();
+        return obtenerProyecto(numero).calcularCostoTotal();
     }
 
     @Override
@@ -172,8 +171,13 @@ public class HomeSolution implements IHomeSolution {
     public List<Tupla<Integer, String>> proyectosPendientes() {
         List<Tupla<Integer, String>> lista = new ArrayList<>();
         for (Proyecto p : proyectos.values())
-            if (!p.estaFinalizado() && p.obtenerTareas().size() > 0) {
-                lista.add(new Tupla<>(p.obtenerNroProyecto(), p.obtenerDireccion()));
+            if (!p.estaFinalizado()) {
+            	for(Tarea t : p.obtenerTareas().values()) {
+            		if (t.obtenerEmpleado() == null) {
+            			lista.add(new Tupla<>(p.obtenerNroProyecto(), p.obtenerDireccion()));
+            			break;
+            		}
+            	}
             }
         return lista;
     }
@@ -181,10 +185,19 @@ public class HomeSolution implements IHomeSolution {
     @Override
     public List<Tupla<Integer, String>> proyectosActivos() {
         List<Tupla<Integer, String>> lista = new ArrayList<>();
-        for (Proyecto p : proyectos.values())
-            if (!p.estaFinalizado() && !p.obtenerTareas().isEmpty()) {
-                lista.add(new Tupla<>(p.obtenerNroProyecto(), p.obtenerDireccion()));
+        for (Proyecto p : proyectos.values()) {
+            if (!p.estaFinalizado()) {
+            	boolean activo = true;
+            	for(Tarea t : p.obtenerTareas().values()) {
+            		if (t.obtenerEmpleado() == null) {
+            			activo = false;
+            		}
+            	}
+            	if(activo) {
+            		lista.add(new Tupla<>(p.obtenerNroProyecto(), p.obtenerDireccion()));
+            	}
             }
+        }
         return lista;
     }
 
@@ -200,7 +213,7 @@ public class HomeSolution implements IHomeSolution {
 
     @Override
     public boolean estaFinalizado(Integer numero) {
-        return getProyecto(numero).estaFinalizado();
+        return obtenerProyecto(numero).estaFinalizado();
     }
 
     @Override
@@ -210,7 +223,7 @@ public class HomeSolution implements IHomeSolution {
 
     @Override
     public List<Tupla<Integer, String>> empleadosAsignadosAProyecto(Integer numero) {
-        Proyecto p = getProyecto(numero);
+        Proyecto p = obtenerProyecto(numero);
         List<Tupla<Integer, String>> lista = new ArrayList<>();
         for (Empleado e : p.devolverHistorial())
             lista.add(new Tupla<>(e.obtenerLegajo(), e.obtenerNombre()));
@@ -221,7 +234,7 @@ public class HomeSolution implements IHomeSolution {
 
     @Override
     public Object[] tareasProyectoNoAsignadas(Integer numero) {
-        Proyecto p = getProyecto(numero);
+        Proyecto p = obtenerProyecto(numero);
         if (p.estaFinalizado()) {
             throw new IllegalArgumentException("Proyecto finalizado");
         }
@@ -235,7 +248,7 @@ public class HomeSolution implements IHomeSolution {
 
     @Override
     public Object[] tareasDeUnProyecto(Integer numero) {
-        Proyecto p = getProyecto(numero);
+        Proyecto p = obtenerProyecto(numero);
         List<String> todas = new ArrayList<>();
         for (Tarea t : p.obtenerTareas().values())
             todas.add(t.obtenerTitulo());
@@ -244,7 +257,7 @@ public class HomeSolution implements IHomeSolution {
 
     @Override
     public String consultarDomicilioProyecto(Integer numero) {
-        return getProyecto(numero).obtenerDireccion();
+        return obtenerProyecto(numero).obtenerDireccion();
     }
 
     @Override
@@ -262,12 +275,12 @@ public class HomeSolution implements IHomeSolution {
 
     @Override
     public String consultarProyecto(Integer numero) {
-        return getProyecto(numero).toString();
+        return obtenerProyecto(numero).toString();
     }
 
     //AUXILIARES 
 
-    private Proyecto getProyecto(Integer numero) {
+    private Proyecto obtenerProyecto(Integer numero) {
         Proyecto p = proyectos.get(numero);
         if (p == null) {
         	throw new IllegalArgumentException("Proyecto no encontrado");
@@ -286,14 +299,13 @@ public class HomeSolution implements IHomeSolution {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("=== HomeSolution ===\n\n");
+        sb.append("HomeSolution\n\n");
 
         if (proyectos.isEmpty()) {
             sb.append("No hay proyectos registrados.\n");
         } else {
             sb.append("Listado de Proyectos:\n");
             for (Proyecto p : proyectos.values()) {
-                sb.append("-------------------------------------------------\n");
                 sb.append("Proyecto N°: ").append(p.obtenerNroProyecto()).append("\n");
                 sb.append("Cliente: ").append(p.obtenerCliente()).append("\n");
                 sb.append("Domicilio: ").append(p.obtenerDireccion()).append("\n");
