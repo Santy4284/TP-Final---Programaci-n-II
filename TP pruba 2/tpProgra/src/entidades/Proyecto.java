@@ -104,14 +104,14 @@ public class Proyecto {
     public void cambiarFinalizado() {
         this.finalizado = true;
         this.fechaReal = Fecha.hoy();
-        this.costoFinal = calcularCostoTotal();
+        calcularCostoTotal();
     }
 
     public boolean estaFinalizado() {
         return finalizado;
     }
 
-    public double calcularCostoTotal() {
+    public void calcularCostoTotal() {
         double total = 0;
         boolean huboRetrasos = false;
 
@@ -132,7 +132,7 @@ public class Proyecto {
         if(huboRetrasos) total *= 1.25;
         else total *= 1.35;
 
-        return total;
+        costoFinal = total;
     }
 
     public List<Empleado> devolverHistorial() {
@@ -143,6 +143,10 @@ public class Proyecto {
     // Getters
     public int obtenerNroProyecto() { 
     	return nroProyecto; }
+    
+    public double obtenerCostoFinal() {
+    	return costoFinal;
+    }
     
     public String obtenerCliente() { 
     	return cliente; }

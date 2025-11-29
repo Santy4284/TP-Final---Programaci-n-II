@@ -72,6 +72,7 @@ public class HomeSolution implements IHomeSolution {
         for (Empleado e : empleados.values()) {
             if (!e.estaOcupado()) {
                 p.reasignarEmpleado(titulo, e);
+                p.calcularCostoTotal();
                 return;
             }
         }
@@ -97,11 +98,13 @@ public class HomeSolution implements IHomeSolution {
         	throw new Exception("No hay empleados disponibles");
         }
         p.reasignarEmpleado(titulo, mejor);
+        p.calcularCostoTotal();
     }
 
     @Override
     public void registrarRetrasoEnTarea(Integer numero, String titulo, double cantidadDias) {
         obtenerProyecto(numero).registrarRetraso(titulo, cantidadDias);
+        obtenerProyecto(numero).calcularCostoTotal();
     }
 
     @Override
@@ -154,7 +157,7 @@ public class HomeSolution implements IHomeSolution {
 
     @Override
     public double costoProyecto(Integer numero) {
-        return obtenerProyecto(numero).calcularCostoTotal();
+        return obtenerProyecto(numero).obtenerCostoFinal();
     }
 
     @Override
@@ -310,7 +313,7 @@ public class HomeSolution implements IHomeSolution {
                 sb.append("Cliente: ").append(p.obtenerCliente()).append("\n");
                 sb.append("Domicilio: ").append(p.obtenerDireccion()).append("\n");
                 sb.append("Fecha finalización real: ").append(p.obtenerFechaReal()).append("\n");
-                sb.append("Costo final: $").append(p.calcularCostoTotal()).append("\n");
+                sb.append("Costo final: $").append(p.obtenerCostoFinal()).append("\n");
 
                 // Verificar si tuvo retraso
                 if (p.obtenerFechaReal().esMayor(p.obtenerFechaEstimada())) {
