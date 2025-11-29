@@ -11,10 +11,10 @@ public class Tarea {
     private boolean finalizada;
 
     // Constructor
-    public Tarea(String titulo, String descripcion, double duracionDias) {
+    public Tarea(String titulo, String descripcion, double diasEstimados) {
         this.titulo = titulo;
         this.descripcion = descripcion;
-        this.duracionDias = duracionDias;
+        this.duracionDias = diasEstimados;
         this.retraso = 0;
         this.empleado = null;
         this.finalizada = false;
@@ -60,13 +60,7 @@ public class Tarea {
 
     
     public double devolverHorasTrabajadas() {
-        double dias = duracionDias;
-
-        
-        if (empleado instanceof EmpleadoPermanente && duracionDias < 1.0) {
-            dias = 1.0;
-        }
-
+        double dias = obtenerDuracionDias();
         return dias * 8; 
     }
     
@@ -81,6 +75,9 @@ public class Tarea {
     }
 
     public double obtenerDuracionDias() {
+    	if (empleado instanceof EmpleadoPermanente && duracionDias < 1.0) {
+            duracionDias = 1.0;
+        }
         return duracionDias;
     }
 

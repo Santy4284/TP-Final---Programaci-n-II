@@ -129,14 +129,9 @@ public class Proyecto {
                 total += costo;
             }
         }
+        if(huboRetrasos) total *= 1.25;
+        else total *= 1.35;
 
-        total *= (huboRetrasos ? 1.25 : 1.35);
-        
-        for (Empleado e : historialEmpleados) {
-            if (e instanceof EmpleadoPermanente && !e.tuvoRetraso()) {
-                total += total * 0.02;
-            }
-        }
         return total;
     }
 
@@ -176,6 +171,6 @@ public class Proyecto {
     @Override
     public String toString() {
         return "Proyecto #" + nroProyecto + " - " + direccion + " (" +
-                (finalizado ? "Finalizado" : "Activo") + ")";
+                (finalizado ? "Finalizado" : "Activo") + ")" ;
     }
 }
