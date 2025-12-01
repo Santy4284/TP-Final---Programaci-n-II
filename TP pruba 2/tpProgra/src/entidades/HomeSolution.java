@@ -106,6 +106,11 @@ public class HomeSolution implements IHomeSolution {
         obtenerProyecto(numero).registrarRetraso(titulo, cantidadDias);
         obtenerProyecto(numero).calcularCostoTotal();
     }
+    
+    public void registrarRetrasoEnProyecto(Integer numero) { //agregado
+    	obtenerProyecto(numero).cambiartieneRetrasos(true);
+    	obtenerProyecto(numero).calcularCostoTotal();
+    }
 
     @Override
     public void agregarTareaEnProyecto(Integer numero, String titulo, String descripcion, double dias) {
@@ -125,8 +130,8 @@ public class HomeSolution implements IHomeSolution {
         }
 
         LocalDate fechaFin = LocalDate.parse(fin);
-        if (fechaFin.isBefore(p.obtenerFechaEstimada().getLocalDate()) ) {
-//        		|| !fechaFin.isAfter(p.obtenerFechaEstimada().getLocalDate())   ) {
+        LocalDate fechaEstimada = p.obtenerFechaEstimada().getLocalDate(); //agregado despues
+        if (fechaFin.isBefore(fechaEstimada) ) {
             throw new IllegalArgumentException("Fecha inválida");
         }            
 
@@ -135,6 +140,10 @@ public class HomeSolution implements IHomeSolution {
             if (e != null) {
             	e.cambiarOcupado(false);
             }
+        }
+        
+        if (!fechaFin.equals(fechaEstimada)) {
+        	registrarRetrasoEnProyecto(numero);
         }
 
         p.cambiarFinalizado();

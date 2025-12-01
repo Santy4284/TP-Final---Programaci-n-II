@@ -16,6 +16,7 @@ public class Proyecto {
     private Fecha fechaReal;
     private Map<String, Tarea> tareas;
     private boolean finalizado;
+    private boolean tieneRetraso;	//agregado
     private double costoFinal;
     private List<Empleado> historialEmpleados;
 
@@ -36,6 +37,7 @@ public class Proyecto {
         this.fechaReal = new Fecha(finEstimada.getLocalDate());
         this.tareas = new HashMap<>();
         this.finalizado = false;
+        this.tieneRetraso = false;
         this.costoFinal = 0;
         this.historialEmpleados = new ArrayList<>();
     }
@@ -52,8 +54,6 @@ public class Proyecto {
 
         Tarea nueva = new Tarea(titulo, descripcion, diasEstimados);
         tareas.put(titulo, nueva);
-//        fechaEstimada.modificarDias((int) diasEstimados);
-//        fechaReal = new Fecha(fechaEstimada.getLocalDate());
     }
 
     public void reasignarEmpleado(String tituloTarea, Empleado nuevo) {
@@ -79,6 +79,7 @@ public class Proyecto {
         }
         t.agregarRetrasoDias(diasRetraso);
         actualizarFechaRealFin();
+        cambiartieneRetrasos(true);
     }
 
     public void actualizarFechaRealFin() {
@@ -113,12 +114,9 @@ public class Proyecto {
 
     public void calcularCostoTotal() {
         double total = 0;
-        boolean huboRetrasos = false;
+        boolean huboRetrasos = tieneRetraso;
 
         for (Tarea t : tareas.values()) {
-            if (t.obtenerRetraso() > 0) {
-            	huboRetrasos = true;
-            }
             Empleado emp = t.obtenerEmpleado();
             if (emp != null) {
                 double costo = emp.calcularPago(
@@ -171,6 +169,14 @@ public class Proyecto {
     
     public Map<String, Tarea> obtenerTareas() { 
     	return tareas; }
+    
+    public boolean obtenertieneRetrasos() {
+    	return tieneRetraso;
+    }
+    
+    public void cambiartieneRetrasos(boolean retraso) {
+    	tieneRetraso = retraso;
+    }
 
     @Override
     public String toString() {
