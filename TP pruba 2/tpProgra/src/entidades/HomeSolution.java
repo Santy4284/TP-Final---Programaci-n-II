@@ -237,8 +237,12 @@ public class HomeSolution implements IHomeSolution {
     public List<Tupla<Integer, String>> empleadosAsignadosAProyecto(Integer numero) {
         Proyecto p = obtenerProyecto(numero);
         List<Tupla<Integer, String>> lista = new ArrayList<>();
-        for (Empleado e : p.devolverHistorial())
-            lista.add(new Tupla<>(e.obtenerLegajo(), e.obtenerNombre()));
+        for (Tarea t : p.obtenerTareas().values()) {
+        	if(t.obtenerEmpleado() != null) {
+        	Empleado e = t.obtenerEmpleado();
+        	lista.add(new Tupla<>(e.obtenerLegajo(), e.obtenerNombre()));
+        	}
+        }
         return lista;
     }
 
